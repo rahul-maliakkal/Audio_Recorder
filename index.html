@@ -1,0 +1,105 @@
+<!DOCTYPE html>
+<html>
+  <head>
+    <title>Home</title>
+  </head>
+  <body>
+ 
+  <h1>Record and Preview</h1>
+  <div class="buttons" style="float: left; width: 1000px">
+	  <button class="record" id='record' onclick="this.disabled = 'disabled';document.getElementById('stop').disabled = false;startRecording(this);">Record</button>
+	  <button class="stop" id='stop' disabled onclick="this.disabled = 'disabled';document.getElementById('preview').disabled = false;stopRecording(this);">Stop</button>
+      <button class="preview" id='preview' disabled onclick="this.disabled = 'disabled';document.getElementById('clear').disabled = false;">Preview</button>
+	  <button class="clear" id="clear" onclick="document.getElementById('record').disabled = false;">Clear</button>
+  </div> 
+  
+
+  
+    <script src="jquery.min.js"></script>
+	
+	<script src="js/recorderjs/recorder.js"></script>
+	<script>
+	
+
+  var audio_context;
+	var recorder;
+  var recIndex = 0;
+
+
+  function saveAudio() {
+    recorder.exportWAV( doneEncoding );
+    // could get mono instead by saying
+    // audioRecorder.exportMonoWAV( doneEncoding );
+}
+
+function doneEncoding( blob ) {
+    recorder.forceDownload( blob, "myRecording" + ((recIndex<10)?"0":"") + recIndex + ".wav" );
+    recIndex++;
+}
+
+function startRecording( e ) {
+  //e.classList.add("recording");
+        recorder.clear();
+        recorder.record();
+}
+
+function stopRecording( e ) {
+  recorder.stop();
+      //  e.classList.remove("recording");
+
+}
+
+	
+	function startUserMedia(stream) {
+    var input = audio_context.createMediaStreamSource(stream);
+    console.log('Media stream created.');
+    
+    //input.connect(audio_context.destination);
+    console.log('Input connected to audio context destination.');
+    
+    recorder = new Recorder(input);
+    console.log('Recorder initialised.');
+  }
+	
+	function createSource( callback ) {
+  	recorder && recorder.exportWAV( 
+      // this is the asynchronous callback that's called when exportWAV finishes encoding
+      function(blob) {
+        var message = $('<audio controls class="aud"><source src="' + URL.createObjectURL(blob)  + '" type="audio/wav"></audio>');
+        
+        message.appendTo("div");
+        upload.appendTo("div");
+      } 
+    );
+  }
+  
+  window.onload = function init() {
+    try {
+      // webkit shim
+      window.AudioContext = window.AudioContext || window.webkitAudioContext;
+      navigator.getUserMedia = navigator.getUserMedia = ( navigator.getUserMedia || navigator.webkitGetUserMedia || navigator.mozGetUserMedia || navigator.msGetUserMedia );
+      window.URL = window.URL || window.webkitURL;
+      
+      audio_context = new AudioContext;
+      console.log('Audio context set up.');
+      console.log('navigator.getUserMedia ' + (navigator.getUserMedia ? 'available.' : 'not present!'));
+    } catch (e) {
+      alert('No web audio support in this browser!');
+    }
+    
+    navigator.getUserMedia({audio: true}, startUserMedia, function(e) {
+      console.log('No live audio input: ' + e);
+    });
+  };
+	</script>
+	<script>
+	$(document).ready(function(){
+  $(".preview").on("click", createSource );
+  
+  $(".clear").on("click", function(){
+    $(".aud").remove();
+  });
+});
+	</script>
+  </body>
+</html>
